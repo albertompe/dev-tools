@@ -1,0 +1,84 @@
+## Dev environment configuration
+
+# Determine OS platform
+PLATFORM=$(uname | tr "[:upper:]" "[:lower:]")
+# If Linux, try to determine specific distribution
+if [ "$PLATFORM" = "linux" ]; then
+    # If available, use LSB to identify distribution
+    if [ -f /etc/lsb-release -o -d /etc/lsb-release.d ]; then
+        DISTRO=$(lsb_release -i | cut -d: -f2 | sed s/'^\t'//)
+    # Otherwise, use release info file
+    else
+        DISTRO=$(ls -d /etc/[A-Za-z]*[_-][rv]e[lr]* | grep -v "lsb" | cut -d'/' -f3 | cut -d'-' -f1 | cut -d'_' -f1)
+    fi
+fi
+# For everything else (or if above failed), just use generic identifier
+[ "$DISTRO" = "" ] && DISTRO=$PLATFORM
+ARCH=$(arch)
+[ $ARCH = 'x86_64' ] && ARCH='amd64'
+
+# Dev base dir
+export DEV_ENV_BASE=$HOME/dev-tools
+
+# Bundles base
+DEV_ENV_BUNDLES_BASE=$DEV_ENV_BASE/bundles
+
+# Modules base
+DEV_ENV_MODULES_BASE=$DEV_ENV_BASE/modules
+
+# Code base dir
+export CODE_BASE=$HOME/code
+
+## Bundles
+
+# Git config
+DEV_ENV_GIT_HOME=$DEV_ENV_BUNDLES_BASE/git/default-$PLATFORM-$ARCH
+export PATH=$DEV_ENV_GIT_HOME/bin:$PATH
+
+# Maven config
+export MAVEN_HOME=$DEV_ENV_BUNDLES_BASE/apache-maven/default
+export PATH=$MAVEN_HOME/bin:$PATH
+
+# Ant config
+export ANT_HOME=$DEV_ENV_BUNDLES_BASE/apache-ant/default
+export PATH=$ANT_HOME/bin:$PATH
+
+## Bin dir
+DEV_ENV_BINDIR=$DEV_ENV_BASE/bin/$PLATFORM-$ARCH
+export PATH=$DEV_ENV_BINDIR:$PATH
+
+## Modules
+
+# goenv
+export GOENV_ROOT="$DEV_ENV_MODULES_BASE/goenv"
+export PATH="$GOENV_ROOT/bin:$PATH"
+eval "$(goenv init -)"
+
+#pyenv
+export PYENV_ROOT="$DEV_ENV_MODULES_BASE/pyenv"
+command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+
+# nvm
+export NVM_DIR="$DEV_ENV_MODULES_BASE/nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+# rbenv
+export RBENV_ROOT=$DEV_ENV_MODULES_BASE/rbenv
+eval "$($DEV_ENV_MODULES_BASE/rbenv/bin/rbenv init - zsh)"
+
+# ruby-build (needed by rbenv to be able to execute 'rbenv install')
+export PATH=$DEV_ENV_MODULES_BASE/ruby-build/bin:$PATH
+
+## Aliases
+alias k=kubectl
+alias kcc=kubectx
+alias kns=kubens
+
+# oc autocompletion
+# the oc oh-my-zsh plugin doesn't work fine
+source <(oc completion zsh)
+
+# Krew
+export PATH=$HOME/.krew/bin:$PATH

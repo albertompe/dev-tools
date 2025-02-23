@@ -1,0 +1,15 @@
+[submodule "modules/goenv"]
+	path = modules/goenv
+	url = https://github.com/syndbg/goenv
+[submodule "modules/pyenv"]
+	path = modules/pyenv
+	url = https://github.com/pyenv/pyenv
+[submodule "modules/nvm"]
+	path = modules/nvm
+	url = https://github.com/nvm-sh/nvm
+[submodule "modules/rbenv"]
+	path = modules/rbenv
+	url = https://github.com/rbenv/rbenv
+[submodule "modules/ruby-build"]
+	path = modules/ruby-build
+	url = https://github.com/rbenv/ruby-build
