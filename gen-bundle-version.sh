@@ -1114,6 +1114,7 @@ function lazydocker_install {
 
     # Arch x86_64 used in package names
     lazydocker_arch=$ARCH
+    [ $ARCH = 'x86_64' ] && lazydocker_arch='amd64'
 
     # Check if already installed
     [ -f $BUNDLESDIR/lazydocker/lazydocker-${latest}-$PLATFORM-${lazydocker_arch} ] && echo "lazydocker version ${latest} already installed!" && return
@@ -1125,7 +1126,7 @@ function lazydocker_install {
     mkdir $tmpDir && echo "Temp dir $tmpDir created" || (echo "Error creating tmp dir $tmpDir" && return)
     cd ${tmpDir}
     echo "Downloading latest lazydocker version: ${latest}"
-    wget --quiet --continue --show-progress "https://github.com/jesseduffield/lazydocker/releases/download/${latest}/lazydocker_$(echo ${latest} | tr -d 'v')_$(sed -r 's/(^|-)(\w)/\U\2/g' <<<"${PLATFORM}")_${lazydocker_arch}.tar.gz"
+    wget --quiet --continue --show-progress "https://github.com/jesseduffield/lazydocker/releases/download/${latest}/lazydocker_$(echo ${latest} | tr -d 'v')_$(sed -r 's/(^|-)(\w)/\U\2/g' <<<"${PLATFORM}")_${ARCH}.tar.gz"
     tar xzvf lazydocker*.tar.gz
 
     mv lazydocker $BUNDLESDIR/lazydocker/lazydocker-${latest}-$PLATFORM-${lazydocker_arch}
