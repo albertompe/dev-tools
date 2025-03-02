@@ -44,6 +44,7 @@ function usage {
     echo "  krew-rabbitmq  - krew rabbitmq plugin"
     echo "  kubebuilder    - Kubebuilder"
     echo "  dive           - dive"
+    echo "  lazydocker     - Lazy docker"
 }
 
 function git_install {
@@ -1078,7 +1079,7 @@ function dive_install {
     [ $ARCH = 'x86_64' ] && dive_arch='amd64'
 
     # Check if already installed
-    [ -f $BUNDLESDIR/krew/dive-${latest}-$PLATFORM-${dive_arch} ] && echo "dive version ${latest} already installed!" && return
+    [ -f $BUNDLESDIR/dive/dive-${latest}-$PLATFORM-${dive_arch} ] && echo "dive version ${latest} already installed!" && return
     [[ ! -d $BUNDLESDIR/dive ]] && mkdir -p $BUNDLESDIR/dive
 
     # Download dive
@@ -1087,7 +1088,6 @@ function dive_install {
     mkdir $tmpDir && echo "Temp dir $tmpDir created" || (echo "Error creating tmp dir $tmpDir" && return)
     cd ${tmpDir}
     echo "Downloading latest dive version: ${latest}"
-    echo "https://github.com/wagoodman/dive/releases/download/${latest}/dive_$(echo_${latest} | tr -d 'v')_${PLATFORM}_${dive_arch}.tar.gz"
     wget --quiet --continue --show-progress "https://github.com/wagoodman/dive/releases/download/${latest}/dive_$(echo ${latest} | tr -d 'v')_${PLATFORM}_${dive_arch}.tar.gz"
     tar xzvf dive*.tar.gz
 
@@ -1103,6 +1103,43 @@ function dive_install {
 
     unset tmpDir
     unset dive_arch
+    unset latest
+}
+
+function lazydocker_install {
+    echo "lazydocker install"
+
+    # Find latest version
+    latest=$(curl -s https://api.github.com/repos/jesseduffield/lazydocker/releases/latest | grep 'tag_name' | cut -d\" -f4)
+
+    # Arch x86_64 used in package names
+    lazydocker_arch=$ARCH
+
+    # Check if already installed
+    [ -f $BUNDLESDIR/lazydocker/lazydocker-${latest}-$PLATFORM-${lazydocker_arch} ] && echo "lazydocker version ${latest} already installed!" && return
+    [[ ! -d $BUNDLESDIR/lazydocker ]] && mkdir -p $BUNDLESDIR/lazydocker
+
+    # Download lazydocker
+    tmpDir=$BASEDIR/tmp
+    [[ -d $tmpDir ]] && rm -rf $tmpDir && echo "tmp dir $tmpDir deleted" || (echo "Error deleting tmp dir $tmpDir" && return)
+    mkdir $tmpDir && echo "Temp dir $tmpDir created" || (echo "Error creating tmp dir $tmpDir" && return)
+    cd ${tmpDir}
+    echo "Downloading latest lazydocker version: ${latest}"
+    wget --quiet --continue --show-progress "https://github.com/jesseduffield/lazydocker/releases/download/${latest}/lazydocker_$(echo ${latest} | tr -d 'v')_$(sed -r 's/(^|-)(\w)/\U\2/g' <<<"${PLATFORM}")_${lazydocker_arch}.tar.gz"
+    tar xzvf lazydocker*.tar.gz
+
+    mv lazydocker $BUNDLESDIR/lazydocker/lazydocker-${latest}-$PLATFORM-${lazydocker_arch}
+    
+    # Set the default version
+    rm -f $BUNDLESDIR/lazydocker/default-$PLATFORM-${lazydocker_arch}
+    ln -s lazydocker-$latest-$PLATFORM-${lazydocker_arch} $BUNDLESDIR/lazydocker/default-$PLATFORM-${lazydocker_arch}
+
+    # Link binary file
+    [[ ! -d $BINDIR/$PLATFORM-${lazydocker_arch} ]] && mkdir -p $BINDIR/$PLATFORM-${lazydocker_arch}
+    [[ ! -f $BINDIR/$PLATFORM-${lazydocker_arch}/lazydocker ]] && ln -s ../../bundles/lazydocker/default-$PLATFORM-${lazydocker_arch} $BINDIR/$PLATFORM-${lazydocker_arch}/lazydocker
+
+    unset tmpDir
+    unset lazydocker_arch
     unset latest
 }
 
@@ -1227,6 +1264,9 @@ case "$1" in
     "dive")
         dive_install
         ;;
+    "lazydocker")
+        lazydocker_install
+        ;;
     "all")
         git_install
         maven_install
@@ -1261,6 +1301,7 @@ case "$1" in
         krew-rabbitmq_install
         kubebuilder_install
         dive_install
+        lazydocker_install
         ;;
     *)
         echo "Error: Bundle or package name invalid" && usage && exit 1
