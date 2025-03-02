@@ -43,6 +43,7 @@ function usage {
     echo "  krew-neat      - krew neat plugin"
     echo "  krew-rabbitmq  - krew rabbitmq plugin"
     echo "  kubebuilder    - Kubebuilder"
+    echo "  dive           - dive"
 }
 
 function git_install {
@@ -1066,6 +1067,45 @@ function kubebuilder_install {
     unset latest
 }
 
+function dive_install {
+    echo "dive install"
+
+    # Find latest version
+    latest=$(curl -s https://api.github.com/repos/wagoodman/dive/releases/latest | grep 'tag_name' | cut -d\" -f4)
+
+    # Arch x86_64 used in package names
+    dive_arch=$ARCH
+    [ $ARCH = 'x86_64' ] && dive_arch='amd64'
+
+    # Check if already installed
+    [ -f $BUNDLESDIR/krew/dive-${latest}-$PLATFORM-${dive_arch} ] && echo "dive version ${latest} already installed!" && return
+    [[ ! -d $BUNDLESDIR/dive ]] && mkdir -p $BUNDLESDIR/dive
+
+    # Download dive
+    tmpDir=$BASEDIR/tmp
+    [[ -d $tmpDir ]] && rm -rf $tmpDir && echo "tmp dir $tmpDir deleted" || (echo "Error deleting tmp dir $tmpDir" && return)
+    mkdir $tmpDir && echo "Temp dir $tmpDir created" || (echo "Error creating tmp dir $tmpDir" && return)
+    cd ${tmpDir}
+    echo "Downloading latest dive version: ${latest}"
+    echo "https://github.com/wagoodman/dive/releases/download/${latest}/dive_$(echo_${latest} | tr -d 'v')_${PLATFORM}_${dive_arch}.tar.gz"
+    wget --quiet --continue --show-progress "https://github.com/wagoodman/dive/releases/download/${latest}/dive_$(echo ${latest} | tr -d 'v')_${PLATFORM}_${dive_arch}.tar.gz"
+    tar xzvf dive*.tar.gz
+
+    mv dive $BUNDLESDIR/dive/dive-${latest}-$PLATFORM-${dive_arch}
+    
+    # Set the default version
+    rm -f $BUNDLESDIR/dive/default-$PLATFORM-${dive_arch}
+    ln -s dive-$latest-$PLATFORM-${dive_arch} $BUNDLESDIR/dive/default-$PLATFORM-${dive_arch}
+
+    # Link binary file
+    [[ ! -d $BINDIR/$PLATFORM-${dive_arch} ]] && mkdir -p $BINDIR/$PLATFORM-${dive_arch}
+    [[ ! -f $BINDIR/$PLATFORM-${dive_arch}/dive ]] && ln -s ../../bundles/dive/default-$PLATFORM-${dive_arch} $BINDIR/$PLATFORM-${dive_arch}/dive
+
+    unset tmpDir
+    unset dive_arch
+    unset latest
+}
+
 # Determine OS platform
 PLATFORM=$(uname | tr "[:upper:]" "[:lower:]")
 # If Linux, try to determine specific distribution
@@ -1184,6 +1224,9 @@ case "$1" in
     "kubebuilder")
         kubebuilder_install
         ;;
+    "dive")
+        dive_install
+        ;;
     "all")
         git_install
         maven_install
@@ -1217,6 +1260,7 @@ case "$1" in
         krew-neat_install
         krew-rabbitmq_install
         kubebuilder_install
+        dive_install
         ;;
     *)
         echo "Error: Bundle or package name invalid" && usage && exit 1
